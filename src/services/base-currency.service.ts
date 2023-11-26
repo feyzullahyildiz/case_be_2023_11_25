@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 interface IRate {
   [key: string]: number;
 }

@@ -1,9 +1,9 @@
-import path from "path";
-import { config as dotEnvConfig } from "dotenv";
-dotEnvConfig({ path: path.resolve(__dirname, "..", ".env") });
+import path from 'path';
+import { config as dotEnvConfig } from 'dotenv';
+dotEnvConfig({ path: path.resolve(__dirname, '..', '.env') });
 
-import { createApp } from "./app";
-import { FixerCurrencyService } from "./services/fixer-currency.service";
+import { createApp } from './app';
+import { FixerCurrencyService } from './services/fixer-currency.service';
 
 const fixerCurrencyService = new FixerCurrencyService(process.env.FIXER_API_KEY!);
 const app = createApp(fixerCurrencyService);

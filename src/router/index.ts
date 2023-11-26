@@ -1,1 +1,1 @@
-export * from "./exchange.router";
+export * from './exchange.router';
