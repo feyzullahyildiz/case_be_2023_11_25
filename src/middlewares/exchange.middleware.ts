@@ -21,8 +21,24 @@ export const createExchangeValidatorMiddlewares = () => {
       next(error);
     }
   };
+  const amountValidatorSchema = rateValidatorSchema.append({
+    amount: Joi.number().required(),
+  });
+  const amount: RequestHandler = (req, res, next) => {
+    try {
+      const result = amountValidatorSchema.validate(req.query);
+      if (result.error) {
+        throw result.error;
+      }
+      res.locals = result.value;
+      next();
+    } catch (error) {
+      next(error);
+    }
+  };
 
   return {
     rate,
+    amount,
   };
 };

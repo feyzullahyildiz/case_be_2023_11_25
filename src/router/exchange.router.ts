@@ -8,7 +8,7 @@ export const createExchangeRouter = (currencyService: BaseCurrencyService) => {
   const validators = createExchangeValidatorMiddlewares();
   const controller = createExchangeController(currencyService);
   router.get('/rate', validators.rate, controller.rate);
-  router.get('/amount');
+  router.get('/amount', validators.amount, controller.amount);
   router.get('/list');
 
   return router;

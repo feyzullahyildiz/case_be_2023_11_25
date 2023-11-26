@@ -1,12 +1,12 @@
 import type { Express } from 'express';
-import { createApp } from '../src/app';
 import request from 'supertest';
 import { ResponseBodyError } from '../src/error/response-body.error';
+import { createMockApp } from './test.util';
 
-describe('Error Responses', () => {
+describe('test Error Responses', () => {
   it('it should give ResponseBodyError', async () => {
     const errResponse = { foo: 'BAR' };
-    const app = createApp({
+    const app = createMockApp({
       getRate: jest.fn(() => Promise.reject(new ResponseBodyError(errResponse))),
     });
     const res = await request(app).get(`/api/exchange/rate`).query({ source: 'USD', targets: 'TRL,EUR' });
@@ -14,7 +14,7 @@ describe('Error Responses', () => {
     expect(res.body).toMatchObject(errResponse);
   });
   it('it should give default Error with its message', async () => {
-    const app = createApp({
+    const app = createMockApp({
       getRate: jest.fn(() => Promise.reject(new Error('MY ERR MESSAGE'))),
     });
     const res = await request(app).get(`/api/exchange/rate`).query({ source: 'USD', targets: 'TRL,EUR' });
@@ -22,7 +22,7 @@ describe('Error Responses', () => {
     expect(res.statusCode).toBe(500);
   });
   it('it should give default Error with default error message', async () => {
-    const app = createApp({
+    const app = createMockApp({
       getRate: jest.fn(() => Promise.reject(new Error())),
     });
     const res = await request(app).get(`/api/exchange/rate`).query({ source: 'USD', targets: 'TRL,EUR' });
@@ -31,38 +31,85 @@ describe('Error Responses', () => {
   });
 });
 
-describe('test app', () => {
+describe('test /api/exchange/rate', () => {
   let app: Express;
-  const getRateFn = jest.fn(() => Promise.resolve({}));
+  const getRate = jest.fn(() => Promise.resolve({ TRL: 28, EUR: 0.95 }));
   beforeEach(() => {
-    app = createApp({
-      getRate: getRateFn,
-    });
+    app = createMockApp({ getRate });
   });
   describe('it should not call getRateFn with invalid params', () => {
     it('without params', async () => {
       const res = await request(app).get('/api/exchange/rate');
-      expect(getRateFn).toHaveBeenCalledTimes(0);
+      expect(getRate).toHaveBeenCalledTimes(0);
       expect(res.status).toBe(400);
     });
     it('without targets', async () => {
       const res = await request(app).get('/api/exchange/rate').query({ source: 'USD' });
-      expect(getRateFn).toHaveBeenCalledTimes(0);
+      expect(getRate).toHaveBeenCalledTimes(0);
       expect(res.status).toBe(400);
     });
     it('without source', async () => {
       const res = await request(app).get('/api/exchange/rate').query({ targets: 'TRL,EUR' });
-      expect(getRateFn).toHaveBeenCalledTimes(0);
+      expect(getRate).toHaveBeenCalledTimes(0);
       expect(res.status).toBe(400);
     });
   });
   it('should call getRateFunction', async () => {
     const res = await request(app).get(`/api/exchange/rate`).query({ source: 'USD', targets: 'TRL,EUR' });
     expect(res.status).toBe(200);
-    expect(getRateFn).toHaveBeenCalledTimes(1);
-    expect(getRateFn).toHaveBeenCalledWith('USD', ['TRL', 'EUR']);
+    expect(getRate).toHaveBeenCalledTimes(1);
+    expect(getRate).toHaveBeenCalledWith('USD', ['TRL', 'EUR']);
     expect(res.body).toHaveProperty('success');
     expect(res.body).toHaveProperty('data');
     expect(res.body.success).toBe(true);
+    expect(res.body.data).toHaveProperty('TRL');
+    expect(res.body.data).toHaveProperty('EUR');
+    expect(res.body.data.TRL).toBe(28);
+    expect(res.body.data.EUR).toBe(0.95);
+  });
+});
+describe('test /api/exchange/amount', () => {
+  let app: Express;
+  const getRate = jest.fn(() => Promise.resolve({ TRL: 28, EUR: 0.95 }));
+  beforeEach(() => {
+    app = createMockApp({ getRate });
+  });
+  describe('it should not call getRateFn with invalid params', () => {
+    it('without params, amount', async () => {
+      const res = await request(app).get('/api/exchange/amount');
+      expect(getRate).toHaveBeenCalledTimes(0);
+      expect(res.status).toBe(400);
+    });
+    it('without targets, amount', async () => {
+      const res = await request(app).get('/api/exchange/amount').query({ source: 'USD' });
+      expect(getRate).toHaveBeenCalledTimes(0);
+      expect(res.status).toBe(400);
+    });
+    it('without source, amount', async () => {
+      const res = await request(app).get('/api/exchange/amount').query({ targets: 'TRL,EUR' });
+      expect(getRate).toHaveBeenCalledTimes(0);
+      expect(res.status).toBe(400);
+    });
+    it('without amount', async () => {
+      const res = await request(app).get('/api/exchange/amount').query({ source: 'USD', targets: 'TRL,EUR' });
+      expect(getRate).toHaveBeenCalledTimes(0);
+      expect(res.status).toBe(400);
+    });
+  });
+  describe('calculate amount', () => {
+    it('should calc', async () => {
+      const res = await request(app)
+        .get('/api/exchange/amount')
+        .query({ source: 'USD', targets: 'TRL,EUR', amount: 5 });
+      expect(getRate).toHaveBeenCalledTimes(1);
+      expect(res.status).toBe(200);
+      expect(res.body).toMatchObject({
+        success: true,
+        data: {
+          amounts: { TRL: 140, EUR: 4.75 },
+          rates: { TRL: 28, EUR: 0.95 },
+        },
+      });
+    });
   });
 });

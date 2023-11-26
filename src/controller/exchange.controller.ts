@@ -8,6 +8,13 @@ type RateRequestHandler = RequestHandler<
   unknown,
   { source: string; targets: Array<string> }
 >;
+type AmountRequestHandler = RequestHandler<
+  unknown,
+  unknown,
+  unknown,
+  unknown,
+  { source: string; targets: Array<string>; amount: number }
+>;
 export const createExchangeController = (currencyService: BaseCurrencyService) => {
   const rate: RateRequestHandler = async (req, res, next) => {
     try {
@@ -18,8 +25,18 @@ export const createExchangeController = (currencyService: BaseCurrencyService) =
       next(error);
     }
   };
+  const amount: AmountRequestHandler = async (req, res, next) => {
+    try {
+      const { source, targets, amount } = res.locals;
+      const data = await currencyService.convert(amount, source, targets);
+      res.json({ success: true, data });
+    } catch (error) {
+      next(error);
+    }
+  };
 
   return {
     rate,
+    amount,
   };
 };
