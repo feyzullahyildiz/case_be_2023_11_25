@@ -13,12 +13,20 @@ describe('Error Responses', () => {
     expect(res.status).toEqual(400);
     expect(res.body).toMatchObject(errResponse);
   });
-  it('it should give default Error', async () => {
+  it('it should give default Error with its message', async () => {
     const app = createApp({
       getRate: jest.fn(() => Promise.reject(new Error('MY ERR MESSAGE'))),
     });
     const res = await request(app).get(`/api/exchange/rate`).query({ source: 'USD', targets: 'TRL,EUR' });
     expect(res.body.message).toBe('MY ERR MESSAGE');
+    expect(res.statusCode).toBe(500);
+  });
+  it('it should give default Error with default error message', async () => {
+    const app = createApp({
+      getRate: jest.fn(() => Promise.reject(new Error())),
+    });
+    const res = await request(app).get(`/api/exchange/rate`).query({ source: 'USD', targets: 'TRL,EUR' });
+    expect(res.body.message).toBe('Unknown error');
     expect(res.statusCode).toBe(500);
   });
 });
