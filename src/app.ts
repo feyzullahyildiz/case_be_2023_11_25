@@ -2,6 +2,7 @@ import express, { ErrorRequestHandler } from 'express';
 import { BaseCurrencyService } from './services/base-currency.service';
 import { createExchangeRouter } from './router';
 import { ResponseBodyError } from './error/response-body.error';
+import Joi from 'joi';
 
 export const createApp = (currencyService: BaseCurrencyService) => {
   const app = express();
@@ -14,16 +15,17 @@ export const createApp = (currencyService: BaseCurrencyService) => {
       res.status(err.statusCode).json(err.body);
       return;
     }
-    if (err && err.message) {
-      res.status(500).json({
+    if (err instanceof Joi.ValidationError) {
+      res.status(400).json({
         success: false,
-        message: err.message,
+        error: err,
       });
       return;
     }
+    const message = (err && err.message) || 'Unknown error';
     res.status(500).json({
       success: false,
-      message: 'Unknown error',
+      message,
     });
   };
   app.use(errHandler);

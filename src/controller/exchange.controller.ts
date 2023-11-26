@@ -1,11 +1,19 @@
 import { RequestHandler } from 'express';
 import { BaseCurrencyService } from '../services/base-currency.service';
 
+type RateRequestHandler = RequestHandler<
+  unknown,
+  unknown,
+  unknown,
+  unknown,
+  { source: string; targets: Array<string> }
+>;
 export const createExchangeController = (currencyService: BaseCurrencyService) => {
-  const rate: RequestHandler = async (req, res, next) => {
+  const rate: RateRequestHandler = async (req, res, next) => {
     try {
-      const result = await currencyService.getRate('USD', ['EUR']);
-      res.json(result);
+      const { source, targets } = res.locals;
+      const data = await currencyService.getRate(source, targets);
+      res.json({ success: true, data });
     } catch (error) {
       next(error);
     }
