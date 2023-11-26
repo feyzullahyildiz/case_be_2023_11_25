@@ -1,6 +1,6 @@
-import { createApp } from '../src/app';
-import { BaseCurrencyService } from '../src/services/base-currency.service';
-import { BaseTransactionService } from '../src/services/base-transaction.service';
+import { createApp } from '../app';
+import { BaseCurrencyService } from '../services/base-currency.service';
+import { BaseTransactionService } from '../services/base-transaction.service';
 interface Opt {
   getRate: jest.Mock;
   setTransaction?: jest.Mock;
@@ -9,7 +9,7 @@ interface Opt {
 export const createMockApp = (opt: Opt) => {
   class MockTransactionService extends BaseTransactionService {
     set = opt.setTransaction || jest.fn();
-    get = opt.setTransaction || jest.fn();
+    get = opt.getTransaction || jest.fn();
   }
   const ts = new MockTransactionService();
   class Mock extends BaseCurrencyService {

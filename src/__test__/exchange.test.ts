@@ -1,33 +1,44 @@
 import type { Express } from 'express';
 import request from 'supertest';
-import { ResponseBodyError } from '../src/error/response-body.error';
+import { ResponseBodyError } from '../error/response-body.error';
 import { createMockApp } from './test.util';
 
 describe('test Error Responses', () => {
-  it('it should give ResponseBodyError', async () => {
+  it('should give ResponseBodyError', async () => {
     const errResponse = { foo: 'BAR' };
     const app = createMockApp({
       getRate: jest.fn(() => Promise.reject(new ResponseBodyError(errResponse))),
     });
-    const res = await request(app).get(`/api/exchange/rate`).query({ source: 'USD', targets: 'TRL,EUR' });
+    const res = await request(app).get('/api/exchange/rate').query({ source: 'USD', targets: 'TRL,EUR' });
     expect(res.status).toEqual(400);
     expect(res.body).toMatchObject(errResponse);
   });
-  it('it should give default Error with its message', async () => {
+  it('should give default Error with its message', async () => {
     const app = createMockApp({
       getRate: jest.fn(() => Promise.reject(new Error('MY ERR MESSAGE'))),
     });
-    const res = await request(app).get(`/api/exchange/rate`).query({ source: 'USD', targets: 'TRL,EUR' });
+    const res = await request(app).get('/api/exchange/rate').query({ source: 'USD', targets: 'TRL,EUR' });
     expect(res.body.message).toBe('MY ERR MESSAGE');
     expect(res.statusCode).toBe(500);
   });
-  it('it should give default Error with default error message', async () => {
+  it('should give default Error with default error message', async () => {
     const app = createMockApp({
       getRate: jest.fn(() => Promise.reject(new Error())),
     });
-    const res = await request(app).get(`/api/exchange/rate`).query({ source: 'USD', targets: 'TRL,EUR' });
+    const res = await request(app).get('/api/exchange/rate').query({ source: 'USD', targets: 'TRL,EUR' });
     expect(res.body.message).toBe('Unknown error');
     expect(res.statusCode).toBe(500);
+  });
+  it('404 error be base error', async () => {
+    const app = createMockApp({
+      getRate: jest.fn(() => Promise.reject(new Error())),
+      getTransaction: jest.fn(() => Promise.resolve(null)),
+    });
+    const res = await request(app)
+      .get('/api/exchange/list')
+      .query({ transaction_id: '14a4764-6ba1-4588-b527-302bafdefe4d' });
+    expect(res.body.message).toEqual('Item not found. transaction_id: 14a4764-6ba1-4588-b527-302bafdefe4d');
+    expect(res.statusCode).toBe(404);
   });
 });
 
@@ -55,7 +66,7 @@ describe('test /api/exchange/rate', () => {
     });
   });
   it('should call getRateFunction', async () => {
-    const res = await request(app).get(`/api/exchange/rate`).query({ source: 'USD', targets: 'TRL,EUR' });
+    const res = await request(app).get('/api/exchange/rate').query({ source: 'USD', targets: 'TRL,EUR' });
     expect(res.status).toBe(200);
     expect(getRate).toHaveBeenCalledTimes(1);
     expect(getRate).toHaveBeenCalledWith('USD', ['TRL', 'EUR']);
@@ -118,6 +129,41 @@ describe('test /api/exchange/amount', () => {
           transaction_id: transactionId,
         },
       });
+    });
+  });
+});
+describe('/api/exchange/list', () => {
+  let app: Express;
+  const transaction_id = 'c14a4764-6ba1-4588-b527-302bafdefe4d';
+  const payload = {
+    amounts: {
+      TRL: 140,
+      EUR: 4.75,
+    },
+    rates: {
+      TRL: 28,
+      EUR: 0.95,
+    },
+  };
+  const getRate = jest.fn(() => Promise.resolve({ TRL: 28, EUR: 0.95 }));
+  const setTransaction = jest.fn(() => Promise.resolve(transaction_id));
+  const getTransaction = jest.fn(() => Promise.resolve(payload));
+  beforeEach(() => {
+    app = createMockApp({ getRate, setTransaction, getTransaction });
+  });
+  it('should exchange list transaction_id', async () => {
+    const res = await request(app).get('/api/exchange/list').query({ transaction_id });
+    expect(getRate).toHaveBeenCalledTimes(0);
+    expect(setTransaction).toHaveBeenCalledTimes(0);
+    expect(getTransaction).toHaveBeenCalledTimes(1);
+    expect(getTransaction).toHaveBeenCalledWith(transaction_id);
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({
+      success: true,
+      data: {
+        amounts: { TRL: 140, EUR: 4.75 },
+        rates: { TRL: 28, EUR: 0.95 },
+      },
     });
   });
 });

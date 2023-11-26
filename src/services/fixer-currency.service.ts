@@ -16,7 +16,7 @@ export class FixerCurrencyService extends BaseCurrencyService {
   private readonly api: AxiosInstance;
   constructor(apiKey: string) {
     if (typeof apiKey !== 'string') {
-      throw new Error(`FixerCurrencyService apiKey is not valid. Value: ${apiKey}`);
+      throw new Error(`FIXER_API_KEY is NOT provided in env. Value: ${apiKey}`);
     }
     const transactionService = new TransactionService();
     super(transactionService);

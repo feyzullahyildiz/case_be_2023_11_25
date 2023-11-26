@@ -1,6 +1,23 @@
-# ................CASE HENÜZ BİTMEDİ................
+# Case'i biraz eksik bir şekilde Tamamladım.
 
-# Case Özetim
+- 3üncü API'nin nasıl çalışması gerektiğini tam olarak anlamadım. Ve burası eksik oldu, startDate ve endDate'e göre sorgulama yok. Başka bir eksik olmadığını düşünüyorum.
+- İkinci önemli bilgi. 2 API (fixer ve currentlayer'ı) incelediğimde, `Free-Tier` 1 Dolar kaç Türk Lirası diye sormak istediğimde, olmuyor. Free-Tier'da sadece EURO'nun diğer kurlara olan karşılığına ulaşabiliyorum. `http://data.fixer.io/api/convert` isteğini de `Free-Tier`'da kullanamadığım için, convert işlemini güncel kurdaki oranı alıp, amount ile kendim çarpıyorum. Bu yanlış bir yöntem olabilir. Bunu yapmamın bir sebebi de şu, `http://data.fixer.io/api/convert` extradan 3 parametre alıyor. `from, to, amount`. `to` değerini array olarak veremediğimizi okudum. Ama case'de array olarak isteniyordu. Her bir target_currency değeri için request atmak yerine tek istek yapmış olduk.
+  - Sonuç olarak şu şekilde çalışıyor.
+  - `http://data.fixer.io/api/latest`'e base değeri ve symbols olarak istek atıyoruz.
+  - response'dan gelen rate değerlerini, queryparams'dan aldığımız amount değeri ile çarpıyoruz.
+  - TransactionServisinde bunları kaydediyoruz. Kayıt sonrasında Service bize unique bir UUID veriyor
+  - amount değeri ile çarpılmış response ve `transaction_id` değeri `response.body` olarak client'a dönüyor
+
+### Nasıl çalışıyor
+
+- src/app.ts //Express Application'ı oluşturuyor. Router'ları app'e bağlıyor vb.
+- src/index.ts // app.ts'den Application'ı oluşturuyor ve port dinleyerek uygulamayı ayağa kaldırıyor.
+
+### Coverage-Test Sonuçları
+
+![coverage](./assets/coverage_res.png)
+
+# Kendime Notlar (Case Özetim)
 
 - RestAPI yapacağım, 3 tane endpoint hazırlamam gerekiyor.
 - **API-1 (Exchange Rate API)**

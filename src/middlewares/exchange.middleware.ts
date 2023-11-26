@@ -36,9 +36,25 @@ export const createExchangeValidatorMiddlewares = () => {
       next(error);
     }
   };
+  const getListSchema = Joi.object({
+    transaction_id: Joi.string().required(),
+  });
+  const getList: RequestHandler = (req, res, next) => {
+    try {
+      const result = getListSchema.validate(req.query);
+      if (result.error) {
+        throw result.error;
+      }
+      res.locals = result.value;
+      next();
+    } catch (error) {
+      next(error);
+    }
+  };
 
   return {
     rate,
     amount,
+    getList,
   };
 };
