@@ -70,9 +70,11 @@ describe('test /api/exchange/rate', () => {
 });
 describe('test /api/exchange/amount', () => {
   let app: Express;
+  const transactionId = '174d42f4-88b2-4440-a628-0452100fd859';
   const getRate = jest.fn(() => Promise.resolve({ TRL: 28, EUR: 0.95 }));
+  const setTransaction = jest.fn(() => Promise.resolve(transactionId));
   beforeEach(() => {
-    app = createMockApp({ getRate });
+    app = createMockApp({ getRate, setTransaction });
   });
   describe('it should not call getRateFn with invalid params', () => {
     it('without params, amount', async () => {
@@ -97,17 +99,23 @@ describe('test /api/exchange/amount', () => {
     });
   });
   describe('calculate amount', () => {
-    it('should calc', async () => {
+    it('should calc amount and return transaction_id', async () => {
       const res = await request(app)
         .get('/api/exchange/amount')
         .query({ source: 'USD', targets: 'TRL,EUR', amount: 5 });
       expect(getRate).toHaveBeenCalledTimes(1);
+      expect(setTransaction).toHaveBeenCalledTimes(1);
+      expect(setTransaction).toHaveBeenCalledWith({
+        source: 'USD',
+        amounts: { TRL: 140, EUR: 4.75 },
+      });
       expect(res.status).toBe(200);
       expect(res.body).toMatchObject({
         success: true,
         data: {
           amounts: { TRL: 140, EUR: 4.75 },
           rates: { TRL: 28, EUR: 0.95 },
+          transaction_id: transactionId,
         },
       });
     });

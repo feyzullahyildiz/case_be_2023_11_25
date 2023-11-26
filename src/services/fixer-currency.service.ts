@@ -1,6 +1,7 @@
 import axios, { AxiosInstance } from 'axios';
 import { BaseCurrencyService } from './base-currency.service';
 import { ResponseBodyError } from '../error/response-body.error';
+import { TransactionService } from './transaction.service';
 type FixerLatestAPIResponse = {
   success: boolean;
   timestamp: number;
@@ -17,17 +18,14 @@ export class FixerCurrencyService extends BaseCurrencyService {
     if (typeof apiKey !== 'string') {
       throw new Error(`FixerCurrencyService apiKey is not valid. Value: ${apiKey}`);
     }
-    super();
+    const transactionService = new TransactionService();
+    super(transactionService);
     this.api = axios.create({
       baseURL: 'http://data.fixer.io/api',
       params: {
         access_key: apiKey,
       },
     });
-    // this.api.interceptors.request.use((x) => {
-    //   console.log("OUTGOING REQ", x);
-    //   return x;
-    // });
   }
   async getRate(source: string, target: string[]) {
     const res = await this.api.get<FixerLatestAPIResponse>('/latest', {
