@@ -1,3 +1,5 @@
+# ................CASE HENÜZ BİTMEDİ................
+
 # Case Özetim
 
 - RestAPI yapacağım, 3 tane endpoint hazırlamam gerekiyor.
