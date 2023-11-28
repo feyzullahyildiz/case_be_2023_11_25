@@ -2,6 +2,9 @@ import type { Express } from 'express';
 import request from 'supertest';
 import { ResponseBodyError } from '../error/response-body.error';
 import { createMockApp } from './test.util';
+import { BaseTransactionService } from '../services/base-transaction.service';
+import { BaseCurrencyService } from '../services/base-currency.service';
+import { createExchangeController } from '../controller';
 
 describe('test Error Responses', () => {
   it('should give ResponseBodyError', async () => {
@@ -164,6 +167,68 @@ describe('/api/exchange/list', () => {
         amounts: { TRL: 140, EUR: 4.75 },
         rates: { TRL: 28, EUR: 0.95 },
       },
+    });
+  });
+  describe('review mock test', () => {
+    it('amount unit test', async () => {
+      const getRate = jest.fn(() => Promise.resolve({ EUR: 10 }));
+      class MockTransactionService extends BaseTransactionService {
+        set = jest.fn(() => Promise.resolve('ALI_DURU'));
+        get = jest.fn();
+      }
+      const ts = new MockTransactionService();
+      class Mock extends BaseCurrencyService {
+        getRate = getRate;
+      }
+      const controller = createExchangeController(new Mock(ts));
+      const resJsonMethod = jest.fn();
+      const nextMethod = jest.fn();
+      await controller.amount(
+        null!,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { locals: { source: 'TRL', targets: ['EUR'], amount: 50 }, json: resJsonMethod } as any,
+        nextMethod,
+      );
+      expect(getRate).toHaveBeenCalledTimes(1);
+      expect(getRate).toHaveBeenCalledWith('TRL', ['EUR']);
+      expect(resJsonMethod).toHaveBeenCalledTimes(1);
+      expect(resJsonMethod).toHaveBeenCalledWith({
+        success: true,
+        data: {
+          amounts: { EUR: 500 },
+          rates: {
+            EUR: 10,
+          },
+          transaction_id: 'ALI_DURU',
+        },
+      });
+      expect(nextMethod).toHaveBeenCalledTimes(0);
+    });
+    it('amount negative ', async () => {
+      const getRateFunctionError = new Error('UNIT TEST ERROR MESSAGE');
+      const getRate = jest.fn(() => Promise.reject(getRateFunctionError));
+      class MockTransactionService extends BaseTransactionService {
+        set = jest.fn(() => Promise.resolve('ALI_DURU'));
+        get = jest.fn();
+      }
+      const ts = new MockTransactionService();
+      class Mock extends BaseCurrencyService {
+        getRate = getRate;
+      }
+      const controller = createExchangeController(new Mock(ts));
+      const resJsonMethod = jest.fn();
+      const nextMethod = jest.fn();
+      await controller.amount(
+        null!,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { locals: { source: 'TRL', targets: ['EUR'], amount: 50 }, json: resJsonMethod } as any,
+        nextMethod,
+      );
+      expect(getRate).toHaveBeenCalledTimes(1);
+      expect(getRate).toHaveBeenCalledWith('TRL', ['EUR']);
+      expect(resJsonMethod).toHaveBeenCalledTimes(0);
+      expect(nextMethod).toHaveBeenCalledTimes(1);
+      expect(nextMethod).toHaveBeenCalledWith(getRateFunctionError);
     });
   });
 });
