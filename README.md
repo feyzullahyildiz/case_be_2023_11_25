@@ -1,3 +1,5 @@
+# [Case Description](./CaseDescription.md)
+
 # Case'i biraz eksik bir şekilde Tamamladım.
 
 - 3üncü API'nin nasıl çalışması gerektiğini tam olarak anlamadım. Ve burası eksik oldu, startDate ve endDate'e göre sorgulama yok. Başka bir eksik olmadığını düşünüyorum.
